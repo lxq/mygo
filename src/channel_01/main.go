@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"runtime"
+	"time"
 )
 
 func sayHello(str string) {
@@ -20,6 +21,29 @@ func sum(a []int, c chan int) {
 	}
 	c <- t //send value to channel
 }
+
+func fibonacci(n int, c chan int){
+	x, y := 0, 1
+	for i := 1; i < n; i++ {
+		c <- x
+		x, y = y, x+y
+	}
+	close(c)
+}
+
+func fibonacci2(c, quit chan int) {
+	x, y := 0, 1
+	for {
+		select {
+			case c <- x:
+				x, y = y, x + y
+			case <- quit:
+				fmt.Println("QUIT!")
+				return;
+		}
+	}
+}
+
 
 func main() {
 	//go routine
@@ -48,8 +72,38 @@ func main() {
 	fmt.Println(<-bc)
 	fmt.Println(<-bc)
 
-	//range
+	//range/close 2013.12.26
+	fmt.Println("fibonacci")
+	cc := make(chan int, 10)
+	go fibonacci(cap(cc), cc)
+	for i := range cc {
+		fmt.Println(i)
+	}
 
-	//select
+	//select 2013.12.26
+	fmt.Println("select example.")
+	ccc := make(chan int)
+	quit := make(chan int)
+	go func() {
+		for i := 0; i < 10; i++ {
+			fmt.Println(<-ccc)
+		}
+		quit<-0
+	}()
+	fibonacci2(ccc, quit)
+	tick := time.Tick(1e8)
+	boom := time.After(5e8)
+	for {
+		select {
+			case <- tick:
+				fmt.Println("tick.")
+			case <- boom:
+				fmt.Println("BOOM!")
+				return
+			default:
+				fmt.Println("   .")
+				time.Sleep(5e7)
+		}
+	}
 
 }
