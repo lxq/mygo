@@ -8,6 +8,21 @@ import (
 	"strings"
 )
 
+type MyHandler struct {
+}
+
+func (p *MyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/" {
+		sayHelloName(w, r)
+		return
+	} else if r.URL.Path == "/login" {
+		login(w, r)
+		return
+	}
+	http.NotFound(w, r)
+	return
+}
+
 func sayHelloName(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()       //默认不解释参数
 	fmt.Println(r.Form) //server端打印
@@ -38,12 +53,16 @@ func login(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	//设置访问路由
-	http.HandleFunc("/", sayHelloName)
-	http.HandleFunc("/login", login)
+	/*
+		//设置访问路由: 使用默认路由
+		http.HandleFunc("/", sayHelloName)
+		http.HandleFunc("/login", login)
 
-	// Server监听端口
-	err := http.ListenAndServe(":8080", nil)
+		// Server监听端口
+		err := http.ListenAndServe(":8080", nil)
+	*/
+	my := &MyHandler{}
+	err := http.ListenAndServe(":8080", my)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
